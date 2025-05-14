@@ -1,0 +1,77 @@
+After the ECSs are restarted, install and deploy the Ceph cluster.
+Step 1 Initialize the Ceph cluster on ceph01.
+Run the following commands to initialize the Ceph cluster:
+cephadm bootstrap --mon-ip 192.168.0.21 --allow-fqdn-hostname --initial-dashboard-user admin --
+initial-dashboard-password Huawei@123 --dashboard-password-noupdate
+After the initialization is complete, the system returns the graphical login interface of the
+cluster. See the following figure.
+it gives us a url
+
+Use the EIP bound to ceph01 to log in to the Ceph web page. See the following figure.
+
+Step 2 Add a node to the cluster.
+Create a Ceph management container.
+cephadm shell
+
+
+Generate a cluster public key and copy it to the remaining hosts.
+ceph cephadm get-pub-key > ~/ceph.pub
+ssh-copy-id -f -i ~/ceph.pub root@ceph02.novalocal
+ssh-copy-id -f -i ~/ceph.pub root@ceph03.novalocal
+
+
+When adding the key, enter the password of the root user of the host as prompted. See
+the following figure.
+
+
+Add all hosts to the cluster.
+ceph orch host add ceph02.novalocal
+ceph orch host add ceph03.novalocal
+
+After the hosts are added, check the host status in the current cluster.
+ceph orch host ls
+
+
+Wait for the system to automatically deploy services to all nodes. After the deployment is
+complete, the status is as follows:
+
+ceph orch ls
+
+
+Step 3 Initialize the Ceph cluster.
+Disable the automatic extension function of the MON daemon.
+[root@ceph01 ~]# ceph orch apply mon --unmanaged=true
+Scheduled mon update...
+Once disabled, the value of PLACEMENT corresponding to mon changes to unmanaged.
+See the following figure.
+ceph orch ls
+
+
+Add the _admin label to ceph02 and ceph03.
+[root@ceph01 ~]# ceph orch host label add ceph02.novalocal _admin
+Added label _admin to host ceph02.novalocal
+[root@ceph01 ~]# ceph orch host label add ceph03.novalocal _admin
+Added label _admin to host ceph03.novalocal
+Deploy the MON and MGR components on the specified node.
+[root@ceph01 ~]# ceph orch apply mon --placement="label:_admin"
+Scheduled mon update...
+[root@ceph01 ~]# ceph orch apply mgr --placement="label:_admin"
+Scheduled mgr update...
+ceph orch host ls
+
+
+
+
+Step 4 Add OSDs.
+Add the hard disks on all hosts as OSDs.
+ceph orch apply osd --all-available-devices
+
+Run ceph orch ps to display the components on all hosts.
+
+
+
+
+
+
+
+
