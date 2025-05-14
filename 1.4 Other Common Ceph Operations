@@ -1,0 +1,95 @@
+1.4.1 Removing Services
+Run ceph orch daemon rm <names> to remove a specified service. The following
+commands remove all services except OSD from ceph02:
+Filter out the services on ceph02:
+ceph orch ps | grep ceph02
+
+Delete the ceph orch apply <name> --unmanaged=true commands to disable the
+automatic expansion of cluster components.
+ceph orch apply crash --unmanaged=true
+ceph orch apply mon --unmanaged=true
+ceph orch apply mgr --unmanaged=true
+ceph orch apply node-exporter --unmanaged=true
+ceph orch apply prometheus --unmanaged=true
+
+
+Run the following commands to delete specified services:
+ceph orch daemon rm crash.ceph02
+ceph orch daemon rm mgr.ceph02.bmmlba
+ceph orch daemon rm mon.ceph02 --force
+
+Note: If ceph02 is running OSD in addition to other services, stop the other services
+before performing the next step.
+
+
+1.4.2 Removing OSDs
+Run the following commands to stop OSDs on ceph02:
+ceph orch daemon stop osd.0
+ceph orch daemon stop osd.3
+ceph orch daemon stop osd.6
+
+
+After all OSDs are stopped, run the following commands to remove them:
+ceph osd rm 0
+ceph osd rm 3
+ceph osd rm 6
+
+
+Then, remove the data on the corresponding disks.
+ceph orch device zap ceph02.novalocal /dev/sdb --force
+ceph orch device zap ceph02.novalocal /dev/sdc --force
+ceph orch device zap ceph02.novalocal /dev/sdd --force
+
+
+Delete the OSD mapping in CRUSH.
+ceph osd crush rm osd.0
+ceph osd crush rm osd.3
+ceph osd crush rm osd.6
+
+
+
+After the OSD mapping is deleted from CRUSH, run the following command to disable
+the automatic OSD deployment:
+ceph orch apply osd --all-available-devices --unmanaged=true
+
+
+1.4.3 Removing a Node
+Run the following command to remove the ceph02 node:
+ceph orch host rm ceph02.novalocal
+
+
+Enable automatic deployment for all services.
+ceph orch apply mon --unmanaged=false
+ceph orch apply mgr --unmanaged=false
+ceph orch apply node-exporter --unmanaged=false
+ceph orch apply crash --unmanaged=false
+ceph orch apply prometheus --unmanaged=false
+
+ceph orch ls
+
+1.4.4 Manually Deploying a Service
+Refer to Step 2 in section 1.3 to add ceph02 back to the cluster. The details are as
+follows:
+
+cecph ofrch host add ceph02.novalocal
+
+
+Add the _admin label to the new node.
+ceph orch host label add ceph02.novalocal _admin
+
+Deploy management-related components on the host labeled _admin.
+ceph orch apply mgr --placement="label:_admin"
+ceph orch apply mon --placement="label:_admin"
+
+Manually add the hard disk of ceph02 as an OSD.
+[ceph: root@ceph01 /]# ceph orch daemon add osd ceph02.novalocal:/dev/sdb
+Created osd(s) 2 on host 'ceph02.novalocal'
+[ceph: root@ceph01 /]# ceph orch daemon add osd ceph02.novalocal:/dev/sdc
+Created osd(s) 5 on host 'ceph02.novalocal'
+[ceph: root@ceph01 /]# ceph orch daemon add osd ceph02.novalocal:/dev/sdd
+Created osd(s) 8 on host 'ceph02.novalocal
+
+
+
+
+
