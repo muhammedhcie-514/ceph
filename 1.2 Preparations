@@ -1,0 +1,97 @@
+reparations
+Prepare your environment as follows:
+1. Configure host name resolution.
+2. Disable the firewall and SELinux.
+3. Configure time synchronization.
+4 Download and Install Cephadm.
+5. Configure the Yum source required by Ceph.
+6. Install the container engine recommended by Ceph.
+Step 1 Configure host names and host name resolution.
+Set the host names of the three hosts to ceph01. novalocal, ceph02. novalocal, ceph03.
+novalocal
+Log in to all hosts and add the following content to the hosts file:
+192.168.0.21 ceph01.novalocal ceph01
+192.168.0.22 ceph02.novalocal ceph02
+192.168.0.23 ceph03.novalocal ceph03
+Then, ping each host name on ceph01 to ensure normal network communication.
+ping ceph01
+ping ceph02
+ping ceph03
+
+Step 2 Disable the firewall and SELinux.
+Log in to all hosts and run systemctl disable firewalld to disable the firewall from
+automatically starting upon system startup.
+Then, disable SELinux.
+
+
+Step 3 Configure time synchronization.
+Run the following command on all hosts to install chrony and set it to automatically start
+upon system startup:
+yum install -y chrony
+systemctl enable chronyd --now
+
+
+
+Run chronyc sources to check the clock sources of the current ECS. Ensure that the clock
+sources are the same before performing subsequent operations
+
+chronyc sources
+
+
+
+Step 4 Download and install Cephadm.
+This step only needs to be performed on one host. In this exercise, this step is performed
+on ceph01.
+Run the following command to download Cephadm adapted to openEuler:
+git clone https://gitee.com/yftyxa/openeuler-cephadm.git
+If the git command does not exist, install Cephadm manually.
+
+
+Once it is downloaded, copy the Cephadm file to the /usr/sbin/ directory and grant the
+execute permission to the file. The commands are as follows:
+cp openeuler-cephadm/cephadm /usr/sbin && chmod a+x /usr/sbin/cephadm
+After the installation is complete, confirm the Cephadm installation is correct by checking
+the help information. The following figure shows the help information.
+
+cephadm --help
+
+Step 5 Add the Yum source required by Ceph.
+Run the following commands on all hosts to add the Ceph Yum source:
+
+cat >> /etc/yum.repos.d/ceph.repo <<EOF
+[ceph]
+name=ceph x86_64
+baseurl=https://repo.huaweicloud.com/ceph/rpm-pacific/el8/x86_64
+enabled=1
+gpgcheck=0
+[ceph-noarch]
+name=ceph noarch
+baseurl=https://repo.huaweicloud.com/ceph/rpm-pacific/el8/noarch
+enabled=1
+gpgcheck=0
+[ceph-source]
+name=ceph SRPMS
+baseurl=https://repo.huaweicloud.com/ceph/rpm-pacific/el8/SRPMS
+enabled=1
+gpgcheck=0
+EOF
+
+
+Step 6 Install the container engine recommended by Ceph.
+Run the following commands on all hosts to add the Yum source required by the
+container engine:
+wget -O /etc/yum.repos.d/CentOS-Base.repo https://repo.huaweicloud.com/repository/conf/CentOS-8-
+reg.repo
+Run the following commands to install the corresponding container engine:
+yum install podman-3.3.1-9.module_el8.5.0+988+b1f0b741.x86_64 lvm2 -y
+During the installation, if there is a software package conflict, uninstall the software
+packages and then continue the installation. Once installed, set the container engine to
+start upon system startup.
+Then, restart all ECS hosts
+
+
+
+
+
+
+
